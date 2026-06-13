@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Lead Leak Audit — Pure Growth Media</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;0,500;0,700;0,900;1,400&family=Archivo:wght@400;500;600;700&family=Rokkitt:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+  /* ===== PURE GROWTH BRAND TOKENS ===== */
+  :root{
+    --ink:#241F21;          /* Pure Growth Black */
+    --paper:#FAFAF5;        /* Pure Growth White (warm cream) */
+    --ink-90:#34302f;
+    --ink-60:#6c6664;
+    --ink-40:#9a9491;
+    --line:#dedcd3;         /* warm hairline on cream */
+    --line-soft:#e9e7df;
+    --fill-soft:#f1efe7;    /* raised cream panel */
+    --serif:'Rokkitt',Georgia,serif;
+    --head:'Roboto','Helvetica Neue',Arial,sans-serif;
+    --body:'Archivo','Helvetica Neue',Arial,sans-serif;
+    --radius:4px;           /* bold-minimal = tight radii */
+    --maxw:720px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    font-family:var(--body);background:var(--paper);color:var(--ink);
+    line-height:1.6;min-height:100vh;display:flex;flex-direction:column;
+    -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+  }
+  .wrap{width:100%;max-width:var(--maxw);margin:0 auto;padding:28px 22px 72px;flex:1;display:flex;flex-direction:column}
+
+  /* Brand bar */
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:4px 0 26px}
+  .logo{font-family:var(--head);font-weight:900;font-size:17px;letter-spacing:-.01em;text-transform:lowercase;display:flex;align-items:center;gap:9px}
+  .logo svg{display:block}
+  .topbar .loc{font-family:var(--body);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-40);font-weight:600}
+
+  /* Progress */
+  .progress{height:3px;background:var(--line);border-radius:99px;overflow:hidden;margin-bottom:34px}
+  .progress > span{display:block;height:100%;width:0;background:var(--ink);transition:width .45s cubic-bezier(.4,0,.2,1)}
+  .progress.hidden{visibility:hidden}
+
+  .screen{display:none}
+  .screen.active{display:block;animation:rise .5s cubic-bezier(.16,1,.3,1)}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion:reduce){
+    .screen.active{animation:none}
+    .progress > span{transition:none}
+    *{scroll-behavior:auto !important}
+  }
+
+  /* Editorial eyebrow */
+  .eyebrow{font-family:var(--serif);font-style:italic;font-size:18px;color:var(--ink-60);margin-bottom:14px;display:block}
+  .kicker{font-family:var(--body);font-size:11.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-40);font-weight:700}
+
+  /* Exaggerated minimalism — oversized heads */
+  h1{font-family:var(--head);font-weight:900;font-size:clamp(2.3rem,7vw,3.7rem);line-height:1.02;letter-spacing:-.035em;margin-bottom:20px}
+  h2{font-family:var(--head);font-weight:900;font-size:clamp(1.7rem,4.6vw,2.4rem);line-height:1.08;letter-spacing:-.03em;margin-bottom:12px}
+  .lede{font-size:17.5px;color:var(--ink-90);margin-bottom:32px;max-width:60ch}
+
+  /* Buttons */
+  .btn{font-family:var(--head);font-weight:700;font-size:16px;letter-spacing:.005em;display:inline-flex;align-items:center;justify-content:center;gap:12px;
+    background:var(--ink);color:var(--paper);border:2px solid var(--ink);padding:18px 28px;border-radius:var(--radius);cursor:pointer;width:100%;
+    transition:background .2s ease,color .2s ease,transform .08s ease;min-height:56px}
+  .btn:hover{background:transparent;color:var(--ink)}
+  .btn:active{transform:translateY(1px)}
+  .btn svg{transition:transform .2s ease}
+  .btn:hover svg{transform:translateX(4px)}
+  .btn.invert{background:var(--paper);color:var(--ink);border-color:var(--paper)}
+  .btn.invert:hover{background:transparent;color:var(--paper)}
+  .btn.ghost{background:transparent;color:var(--ink-60);border-color:transparent;width:auto;font-family:var(--body);font-weight:600;font-size:14.5px;padding:12px 0;min-height:0}
+  .btn.ghost:hover{color:var(--ink)}
+  .btn[disabled]{opacity:.35;cursor:not-allowed}
+  :focus-visible{outline:2.5px solid var(--ink);outline-offset:3px;border-radius:2px}
+
+  /* Proof row */
+  .proof{display:flex;gap:0;margin-top:40px;border-top:1.5px solid var(--ink)}
+  .proof div{flex:1;padding:18px 14px 4px 0}
+  .proof div + div{padding-left:20px;border-left:1px solid var(--line)}
+  .proof b{font-family:var(--head);display:block;font-size:clamp(1.5rem,5vw,2rem);font-weight:900;letter-spacing:-.02em;line-height:1}
+  .proof span{font-size:12px;color:var(--ink-60);line-height:1.35;display:block;margin-top:7px}
+
+  /* Question */
+  .qhead{display:flex;align-items:baseline;gap:14px;margin-bottom:18px}
+  .qhead .n{font-family:var(--head);font-weight:900;font-size:15px;letter-spacing:.04em}
+  .qhead .of{font-family:var(--body);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-40);font-weight:700}
+  .qbody{font-size:16.5px;color:var(--ink-90);margin-bottom:18px;max-width:58ch}
+  .qstat{font-family:var(--body);font-size:14px;color:var(--ink-90);background:var(--fill-soft);border-left:3px solid var(--ink);padding:15px 17px;margin-bottom:28px;border-radius:0 var(--radius) var(--radius) 0}
+  .qstat .src{display:block;margin-top:6px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-40);font-weight:700}
+  .choices{display:grid;gap:12px}
+  .choice{display:flex;align-items:flex-start;gap:15px;text-align:left;background:transparent;border:1.5px solid var(--line);
+    border-radius:var(--radius);padding:19px 20px;cursor:pointer;font-family:var(--body);font-size:16px;color:var(--ink);transition:border-color .15s,background .15s;width:100%}
+  .choice:hover{border-color:var(--ink);background:var(--fill-soft)}
+  .choice .mark{flex:0 0 20px;height:20px;border:1.5px solid var(--ink-40);border-radius:50%;margin-top:2px;transition:border-color .15s}
+  .choice:hover .mark{border-color:var(--ink)}
+  .choice b{font-family:var(--head);font-weight:500;font-size:16.5px}
+
+  /* Form */
+  .field{margin-bottom:18px;text-align:left}
+  .field label{display:block;font-family:var(--head);font-size:13px;font-weight:700;letter-spacing:.02em;margin-bottom:7px}
+  .field input{width:100%;font-family:var(--body);font-size:16px;padding:15px 16px;border:1.5px solid var(--line);border-radius:var(--radius);background:#fff;color:var(--ink);transition:border-color .15s}
+  .field input::placeholder{color:var(--ink-40)}
+  .field input:focus{outline:none;border-color:var(--ink)}
+  .consent{font-size:11.5px;color:var(--ink-60);margin:6px 0 22px;line-height:1.55}
+
+  /* Results */
+  .scorewrap{text-align:center;padding:8px 0 4px}
+  .scorewrap .num{font-family:var(--head);font-weight:900;font-size:clamp(5.5rem,22vw,8.5rem);line-height:.82;letter-spacing:-.05em}
+  .scorewrap .of{font-family:var(--serif);font-style:italic;font-size:20px;color:var(--ink-60);display:block;margin-top:8px}
+  .tierpill{display:inline-flex;align-items:center;gap:9px;font-family:var(--head);font-weight:700;font-size:13.5px;letter-spacing:.03em;
+    border:1.5px solid var(--ink);padding:9px 17px;border-radius:99px;margin:20px 0 6px}
+  .tierpill.solid{background:var(--ink);color:var(--paper)}
+  .tierMsg{text-align:center;color:var(--ink-90);font-size:16.5px;max-width:52ch;margin:8px auto 0}
+
+  .leaklist{margin:30px 0 8px;display:grid;gap:0;border-top:1.5px solid var(--ink)}
+  .leakitem{display:flex;align-items:flex-start;gap:14px;padding:18px 2px;border-bottom:1px solid var(--line)}
+  .leakitem .ic{flex:0 0 22px;margin-top:1px}
+  .leakitem .t{font-family:var(--head);font-weight:700;font-size:16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .leakitem .fix{font-size:14px;color:var(--ink-60);margin-top:6px;line-height:1.5}
+  .leakitem .fix b{color:var(--ink);font-weight:700}
+  .tag{font-family:var(--body);font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;padding:3px 9px;border-radius:99px}
+  .tag.leak{background:var(--ink);color:var(--paper)}
+  .tag.ok{background:transparent;border:1px solid var(--line);color:var(--ink-40)}
+  .leakitem.ok .t{color:var(--ink-40);font-weight:500}
+
+  /* Offer block (dark) */
+  .offer{background:var(--ink);color:var(--paper);border-radius:var(--radius);padding:42px 32px;margin-top:36px;text-align:center}
+  .offer .eyebrow{color:#b9b3af}
+  .offer h2{color:var(--paper)}
+  .offer p{color:#cfc9c4;font-size:16px;margin:14px auto 26px;max-width:44ch}
+  .offer .fine{font-size:12.5px;color:#8f8884;margin-top:18px;line-height:1.55;max-width:48ch;margin-left:auto;margin-right:auto}
+
+  .footer{text-align:center;font-family:var(--body);font-size:12px;color:var(--ink-40);letter-spacing:.04em;padding-top:34px}
+  .micro{text-align:center;font-family:var(--body);font-size:12.5px;color:var(--ink-40);margin-top:18px;letter-spacing:.02em}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="topbar">
+    <span class="logo">
+      <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="9" fill="#241F21"/><path d="M6.5 13.5V6.5h3.2c1.5 0 2.5 .9 2.5 2.3s-1 2.3-2.5 2.3H8.4v2.4z" fill="#FAFAF5"/></svg>
+      pure growth
+    </span>
+    <span class="loc">Saint Paul, MN</span>
+  </header>
+
+  <div class="progress hidden" id="bar" role="progressbar" aria-label="Audit progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="barfill"></span></div>
+
+  <!-- ============ WELCOME ============ -->
+  <section class="screen active" id="s-welcome" aria-labelledby="wh">
+    <span class="eyebrow">For Minnesota service businesses</span>
+    <h1 id="wh">Find out where your leads are leaking.</h1>
+    <p class="lede">Most owners don't lose jobs because their ads are bad — they lose them in the quiet gaps after someone reaches out. Answer 7 quick questions and get your Lead Leak Score, plus the exact fix for each gap. Takes about a minute.</p>
+    <button class="btn" onclick="start()">Start the audit
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <div class="proof">
+      <div><b>$6M+</b><span>client revenue generated</span></div>
+      <div><b>20→400</b><span>students, with a waitlist</span></div>
+      <div><b>2017</b><span>running ads since</span></div>
+    </div>
+    <p class="micro">Free · No cost · No obligation</p>
+  </section>
+
+  <!-- ============ QUIZ ============ -->
+  <section class="screen" id="s-quiz" aria-live="polite">
+    <div class="qhead"><span class="n" id="qnum">01</span><span class="of" id="qof">Leak 1 of 7</span></div>
+    <h2 id="qtitle"></h2>
+    <p class="qbody" id="qbody"></p>
+    <p class="qstat" id="qstat"></p>
+    <div class="choices" role="group" aria-label="Choose one">
+      <button class="choice" onclick="answer(true)"><span class="mark" aria-hidden="true"></span><b id="qyes"></b></button>
+      <button class="choice" onclick="answer(false)"><span class="mark" aria-hidden="true"></span><b id="qno"></b></button>
+    </div>
+    <button class="btn ghost" id="back" onclick="back()" style="display:none;margin-top:16px">← Back</button>
+  </section>
+
+  <!-- ============ CONTACT GATE ============ -->
+  <section class="screen" id="s-gate" aria-labelledby="gh">
+    <span class="eyebrow">Last step</span>
+    <h2 id="gh">Your score is ready.</h2>
+    <p class="lede" style="margin-bottom:24px">Where should we send your results and personalized fix plan? We'll text it over in seconds — so you can see our follow-up speed for yourself.</p>
+    <form id="leadform" onsubmit="return submitLead(event)" novalidate>
+      <div class="field"><label for="f-first">First name</label><input id="f-first" name="first" required autocomplete="given-name" placeholder="Christian"></div>
+      <div class="field"><label for="f-biz">Business name</label><input id="f-biz" name="business" required autocomplete="organization" placeholder="Your business"></div>
+      <div class="field"><label for="f-phone">Mobile number</label><input id="f-phone" name="phone" type="tel" required autocomplete="tel" placeholder="(651) 555-0123"></div>
+      <div class="field"><label for="f-email">Email</label><input id="f-email" name="email" type="email" required autocomplete="email" placeholder="you@business.com"></div>
+      <p class="consent">By submitting, you agree to receive your results and occasional follow-up from Pure Growth Media by text, call, or email. No spam. Opt out anytime.</p>
+      <button class="btn" type="submit">Show my Lead Leak Score
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </form>
+  </section>
+
+  <!-- ============ RESULTS ============ -->
+  <section class="screen" id="s-results" aria-labelledby="rh">
+    <p class="kicker" style="text-align:center" id="rh">Your Lead Leak Score</p>
+    <div class="scorewrap"><span class="num" id="scoreNum">0</span><span class="of">out of 7 leaks</span></div>
+    <div style="text-align:center"><span class="tierpill" id="tierPill"></span></div>
+    <p class="tierMsg" id="tierMsg"></p>
+
+    <p class="kicker" style="margin:34px 0 0">Your breakdown</p>
+    <div class="leaklist" id="leaklist"></div>
+
+    <div class="offer">
+      <span class="eyebrow">What now</span>
+      <h2>Want these plugged for you?</h2>
+      <p id="offerMsg"></p>
+      <button class="btn invert" onclick="cta()">Message us the word “SERVICE”</button>
+      <p class="fine">A big part of how we get paid is tied to booked appointments — not impressions. If the system doesn't put real people on your calendar, that's on us.</p>
+    </div>
+    <p class="footer">Christian Yang · Founder, Pure Growth Media · Saint Paul, MN</p>
+  </section>
+
+</div>
+
+<script>
+/* ===== CONTENT — all stats verified-safe (MIT 5-vs-30min; Invoca missed-call) ===== */
+const LEAKS=[
+ {key:'speed',title:'The Slow Reply',
+  body:'A new lead comes in. How long until they actually hear from you?',
+  stat:'MIT found that reaching a lead within 5 minutes instead of 30 makes you about 21× more likely to qualify them. Most owners take hours — the lead’s already messaging the next business.',src:'Source: MIT / InsideSales Lead Response Study',
+  yes:'Every new lead gets a reply within 5 minutes, day or night.',
+  no:'Sometimes it’s hours. Sometimes the next day.',
+  fix:'Auto-text every new lead the second they come in — even “Got it, I’ll call you shortly.” First contact wins.'},
+ {key:'inbox',title:'The Inbox Graveyard',
+  body:'Where do your leads actually live right now?',
+  stat:'If the honest answer is email, DMs, and a sticky note on the dash, leads slip through — not because you don’t care, but because nothing’s catching them.',src:'',
+  yes:'Every lead lands in one place I check on a schedule.',
+  no:'They’re scattered across email, texts, DMs, and my memory.',
+  fix:'Give every lead one home. A CRM does it automatically so nothing falls through.'},
+ {key:'calls',title:'The Missed Call',
+  body:'How many of your inbound calls go unanswered?',
+  stat:'About 1 in 4 calls to contractors go unanswered — and ~85% of people who hit voicemail never leave a message and never call back. They dial the next name.',src:'Source: Invoca call data',
+  yes:'Missed calls get an instant text back and a same-day callback.',
+  no:'Missed calls go to voicemail and I get to them when I can.',
+  fix:'Turn on missed-call text-back: anyone who can’t reach you gets an instant “Sorry I missed you — how can I help?”'},
+ {key:'page',title:'The Dead-End Page',
+  body:'When someone clicks your ad or finds you online, what’s the very next step?',
+  stat:'A busy homepage with ten links and no obvious “book now” makes people freeze. A confused visitor doesn’t call — they close the tab.',src:'',
+  yes:'My page has one clear next step that’s impossible to miss.',
+  no:'They land somewhere general and have to figure it out.',
+  fix:'Send ad traffic to one simple page with one job: capture the lead. One headline, one action, no clutter.'},
+ {key:'noshow',title:'The No-Show',
+  body:'Once someone books, what keeps them from forgetting?',
+  stat:'A booked appointment isn’t a kept one. With no reminders, people double-book, forget, or cool off — and you’re left with an empty slot.',src:'',
+  yes:'Every booking gets automatic reminders before the appointment.',
+  no:'I book them and hope they show.',
+  fix:'Add automatic text + email reminders at 24 hours and 1 hour out. Cheapest no-show insurance there is.'},
+ {key:'cold',title:'The Cold Lead',
+  body:'What happens to a lead who doesn’t book the first time?',
+  stat:'“Not now” rarely means “never” — it means “not yet.” With no nurture, those leads go cold and hire whoever stayed in touch.',src:'',
+  yes:'Leads who don’t book get steady, friendly follow-up over weeks.',
+  no:'If they don’t bite early, I move on.',
+  fix:'Build a simple 2–3 week follow-up sequence. Showing up consistently beats chasing new clicks.'},
+ {key:'report',title:'The Meaningless Report',
+  body:'Can you tell how many appointments your marketing actually booked?',
+  stat:'Impressions, reach, and likes feel like progress — they don’t pay your staff. If no one can tell you how many people got on your calendar, you’re flying blind.',src:'',
+  yes:'I can see exactly how many booked appointments my marketing produced.',
+  no:'I get reports full of numbers but I’m not sure what booked.',
+  fix:'Ask one question of any marketing you pay for: “How many booked appointments did this create?” If no one can answer, that’s your answer.'},
+];
+
+/* ===== SVG ICONS (no emojis) ===== */
+const IC_LEAK='<svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3l9 16H3L12 3z" stroke="#241F21" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 10v4M12 16.5v.5" stroke="#241F21" stroke-width="1.8" stroke-linecap="round"/></svg>';
+const IC_OK='<svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="#9a9491" stroke-width="1.6"/><path d="M8 12.3l2.6 2.6L16 9.5" stroke="#9a9491" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+/* ===== STATE ===== */
+let i=0; const answers=new Array(LEAKS.length).fill(null);
+const $=id=>document.getElementById(id);
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$(id).classList.add('active');window.scrollTo({top:0,behavior:'smooth'});}
+function setBar(p){const b=$('bar');b.classList.toggle('hidden',p<=0);$('barfill').style.width=p+'%';b.setAttribute('aria-valuenow',p);}
+function pad(n){return String(n).padStart(2,'0');}
+
+function start(){i=0;render();show('s-quiz');}
+function render(){
+  const l=LEAKS[i];
+  $('qnum').textContent=pad(i+1);
+  $('qof').textContent=`Leak ${i+1} of ${LEAKS.length}`;
+  $('qtitle').textContent=l.title;
+  $('qbody').textContent=l.body;
+  $('qstat').innerHTML=l.stat+(l.src?`<span class="src">${l.src}</span>`:'');
+  $('qyes').textContent=l.yes;
+  $('qno').textContent=l.no;
+  $('back').style.display=i>0?'inline-flex':'none';
+  setBar(Math.round((i/LEAKS.length)*100));
+}
+function answer(v){answers[i]=v;if(i<LEAKS.length-1){i++;render();}else{setBar(100);show('s-gate');}}
+function back(){if(i>0){i--;render();}}
+
+/* ===== LEAD CAPTURE =====
+   >>> GHL INTEGRATION POINT <<< — replace console.log with a POST to your GHL
+   inbound webhook, or embed your GHL form here. `lead` is ready to send.        */
+function submitLead(e){
+  e.preventDefault();
+  const f=e.target;
+  if(!f.checkValidity()){f.reportValidity();return false;}
+  const fd=new FormData(f);
+  const lead={first:fd.get('first'),business:fd.get('business'),phone:fd.get('phone'),email:fd.get('email'),
+    score:answers.filter(a=>a===false).length,
+    leaks:LEAKS.filter((_,n)=>answers[n]===false).map(l=>l.key)};
+  console.log('LEAD →',lead);
+  /* fetch('https://services.leadconnectorhq.com/hooks/XXXX',{method:'POST',
+     headers:{'Content-Type':'application/json'},body:JSON.stringify(lead)}); */
+  renderResults();show('s-results');return false;
+}
+
+/* ===== RESULTS ===== */
+function renderResults(){
+  const n=answers.filter(a=>a===false).length;
+  $('scoreNum').textContent=n;
+  const pill=$('tierPill'); let label,msg,offer,solid=false;
+  if(n<=1){label='Tight ship';solid=true;
+    msg='You’re running tighter than most Minnesota service businesses. A few small tune-ups, not an overhaul.';
+    offer='You’re close. Let’s find the last bit of money slipping through and lock it down.';}
+  else if(n<=4){label='Money slipping through';
+    msg='You’re working hard to bring leads in — but a few are walking out the back door. Each fix below puts real jobs back on your calendar.';
+    offer='You’ve got '+n+' fixable leaks. We can plug every one of them for you.';}
+  else{label='System problem — not a you problem';
+    msg='This isn’t about working harder — you’re already maxed out. The system behind your leads is letting them out faster than you bring them in.';
+    offer='With '+n+' leaks, manual fixes won’t hold. This is exactly what the Booked Solid System is built to solve.';}
+  pill.textContent=label;pill.classList.toggle('solid',solid);
+  $('tierMsg').textContent=msg;$('offerMsg').textContent=offer;
+
+  const list=$('leaklist');list.innerHTML='';
+  LEAKS.forEach((l,k)=>{
+    const leaking=answers[k]===false;
+    const el=document.createElement('div');
+    el.className='leakitem'+(leaking?'':' ok');
+    el.innerHTML=`${leaking?IC_LEAK:IC_OK}<div><div class="t">${l.title}
+      <span class="tag ${leaking?'leak':'ok'}">${leaking?'Leaking':'Solid'}</span></div>
+      ${leaking?`<div class="fix"><b>10-minute fix —</b> ${l.fix}</div>`:''}</div>`;
+    list.appendChild(el);
+  });
+}
+
+/* ===== CTA ===== — point at your Messenger m.me/...?text=SERVICE or GHL booking link */
+function cta(){
+  /* window.location.href='https://m.me/puregrowthmedia?ref=SERVICE'; */
+  alert('Wire this button to your Messenger (m.me/...?text=SERVICE) or GHL booking link.');
+}
+</script>
+<script>
+/* iframe auto-resize beacon — posts height to the Webflow parent so the iframe never clips */
+(function(){function postH(){try{parent.postMessage({pgmAuditHeight:document.documentElement.scrollHeight},'*');}catch(e){}}
+if('ResizeObserver' in window){new ResizeObserver(postH).observe(document.body);}
+window.addEventListener('load',postH);window.addEventListener('resize',postH);})();
+</script>
+</body>
+</html>
