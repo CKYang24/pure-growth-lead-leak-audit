@@ -106,6 +106,9 @@
   .field input::placeholder{color:var(--ink-40)}
   .field input:focus{outline:none;border-color:var(--ink)}
   .consent{font-size:11.5px;color:var(--ink-60);margin:6px 0 22px;line-height:1.55}
+  .checkfield{display:flex;gap:11px;align-items:flex-start;text-align:left;font-size:12.5px;color:var(--ink-60);line-height:1.5;cursor:pointer}
+  .checkfield input{flex:0 0 18px;width:18px;height:18px;margin-top:1px;accent-color:var(--ink);cursor:pointer}
+  .checkfield a{color:var(--ink);text-decoration:underline}
 
   /* Results */
   .scorewrap{text-align:center;padding:8px 0 4px}
@@ -180,18 +183,17 @@
     <button class="btn ghost" id="back" onclick="back()" style="display:none;margin-top:16px">← Back</button>
   </section>
 
-  <!-- ============ CONTACT GATE ============ -->
+  <!-- ============ CONTACT CAPTURE (front of funnel) ============ -->
   <section class="screen" id="s-gate" aria-labelledby="gh">
-    <span class="eyebrow">Last step</span>
-    <h2 id="gh">Your score is ready.</h2>
-    <p class="lede" style="margin-bottom:24px">Where should we send your results and personalized fix plan? We'll text it over in seconds — so you can see our follow-up speed for yourself.</p>
+    <span class="eyebrow">Before we start</span>
+    <h2 id="gh">Where should we send your results?</h2>
+    <p class="lede" style="margin-bottom:24px">Drop your details, then answer 7 quick questions. Your personalized Lead Leak Score will be ready the moment you finish — and you'll see our follow-up speed for yourself.</p>
     <form id="leadform" onsubmit="return submitLead(event)" novalidate>
-      <div class="field"><label for="f-first">First name</label><input id="f-first" name="first" required autocomplete="given-name" placeholder="Christian"></div>
-      <div class="field"><label for="f-biz">Business name</label><input id="f-biz" name="business" required autocomplete="organization" placeholder="Your business"></div>
+      <div class="field"><label for="f-name">Name</label><input id="f-name" name="name" required autocomplete="name" placeholder="Your name"></div>
       <div class="field"><label for="f-phone">Mobile number</label><input id="f-phone" name="phone" type="tel" required autocomplete="tel" placeholder="(651) 555-0123"></div>
       <div class="field"><label for="f-email">Email</label><input id="f-email" name="email" type="email" required autocomplete="email" placeholder="you@business.com"></div>
-      <p class="consent">By submitting, you agree to receive your results and occasional follow-up from Pure Growth Media by text, call, or email. No spam. Opt out anytime.</p>
-      <button class="btn" type="submit">Show my Lead Leak Score
+      <label class="checkfield"><input type="checkbox" id="f-consent" name="consent" required><span>I agree to Pure Growth Media's <a href="https://www.pure-growth.com/privacy-policy" target="_blank" rel="noopener">Terms &amp; Privacy Policy</a>, and consent to receive marketing communications (calls, texts, emails) about my results and services. Opt out anytime.</span></label>
+      <button class="btn" type="submit" style="margin-top:22px">Start the audit
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
     </form>
@@ -271,13 +273,13 @@ const IC_LEAK='<svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="
 const IC_OK='<svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="#9a9491" stroke-width="1.6"/><path d="M8 12.3l2.6 2.6L16 9.5" stroke="#9a9491" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
 /* ===== STATE ===== */
-let i=0; const answers=new Array(LEAKS.length).fill(null);
+let i=0; let lead={}; const answers=new Array(LEAKS.length).fill(null);
 const $=id=>document.getElementById(id);
 function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$(id).classList.add('active');window.scrollTo({top:0,behavior:'smooth'});}
 function setBar(p){const b=$('bar');b.classList.toggle('hidden',p<=0);$('barfill').style.width=p+'%';b.setAttribute('aria-valuenow',p);}
 function pad(n){return String(n).padStart(2,'0');}
 
-function start(){i=0;render();show('s-quiz');}
+function start(){show('s-gate');}
 function render(){
   const l=LEAKS[i];
   $('qnum').textContent=pad(i+1);
@@ -290,24 +292,33 @@ function render(){
   $('back').style.display=i>0?'inline-flex':'none';
   setBar(Math.round((i/LEAKS.length)*100));
 }
-function answer(v){answers[i]=v;if(i<LEAKS.length-1){i++;render();}else{setBar(100);show('s-gate');}}
+function answer(v){answers[i]=v;if(i<LEAKS.length-1){i++;render();}else{setBar(100);finishAudit();}}
 function back(){if(i>0){i--;render();}}
 
-/* ===== LEAD CAPTURE =====
-   >>> GHL INTEGRATION POINT <<< — replace console.log with a POST to your GHL
-   inbound webhook, or embed your GHL form here. `lead` is ready to send.        */
+/* ===== LEAD CAPTURE (front of funnel) =====
+   >>> GHL INTEGRATION POINT 1 <<< — replace console.log with a POST to your GHL
+   inbound webhook. `lead` holds name/phone/email/consent and is captured the
+   moment they start, BEFORE the questions — so you keep the lead even if they
+   don't finish the quiz.                                                         */
 function submitLead(e){
   e.preventDefault();
   const f=e.target;
   if(!f.checkValidity()){f.reportValidity();return false;}
   const fd=new FormData(f);
-  const lead={first:fd.get('first'),business:fd.get('business'),phone:fd.get('phone'),email:fd.get('email'),
-    score:answers.filter(a=>a===false).length,
-    leaks:LEAKS.filter((_,n)=>answers[n]===false).map(l=>l.key)};
-  console.log('LEAD →',lead);
+  lead={name:fd.get('name'),phone:fd.get('phone'),email:fd.get('email'),consent:!!fd.get('consent')};
+  console.log('LEAD CAPTURED →',lead);
   /* fetch('https://services.leadconnectorhq.com/hooks/XXXX',{method:'POST',
      headers:{'Content-Type':'application/json'},body:JSON.stringify(lead)}); */
-  renderResults();show('s-results');return false;
+  i=0;render();show('s-quiz');return false;   // contact saved — begin the questions
+}
+
+/* When the 7 questions finish, attach the score and show results.
+   >>> GHL INTEGRATION POINT 2 (optional) <<< — update the same contact with score/leaks. */
+function finishAudit(){
+  lead.score=answers.filter(a=>a===false).length;
+  lead.leaks=LEAKS.filter((_,n)=>answers[n]===false).map(l=>l.key);
+  console.log('AUDIT COMPLETE →',lead);
+  renderResults();show('s-results');
 }
 
 /* ===== RESULTS ===== */
